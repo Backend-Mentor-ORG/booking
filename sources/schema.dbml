@@ -1,0 +1,204 @@
+Project booking_project {
+  database_type: 'PostgreSQL'
+}
+
+// ==================== Search & Filter ====================
+
+Table external_api_configuration {
+  id varchar [pk]
+  provider varchar    // "Hotels" or "Flights"
+  baseUrl varchar
+  apiKey varchar
+  isActive boolean
+}
+
+// ==================== Users & Auth ====================
+
+Table "user" {
+  id varchar [pk]
+  name varchar
+  email varchar
+  userTypeId varchar [ref: > user_type.id]
+}
+
+Table user_type {
+  id varchar [pk]
+  type varchar
+}
+
+Table user_role {
+  userId varchar [ref: > "user".id]
+  roleId varchar [ref: > role.id]
+  Note: 'OPEN: composite PK (userId, roleId) vs surrogate id + UNIQUE'
+}
+
+Table role {
+  id varchar [pk]
+  name varchar
+}
+
+Table customer {
+  id varchar [pk]
+  userId varchar [ref: > "user".id]
+}
+
+// ==================== Customer Management ====================
+
+Table address {
+  id varchar [pk]
+  customerId varchar [ref: > customer.id]
+  isDefault boolean
+  line1 varchar
+  line2 varchar
+  city varchar
+  state varchar
+  postalCode varchar
+  country varchar
+}
+
+Table customer_preferences {
+  customerId varchar [ref: > customer.id]
+  preferences varchar
+}
+
+Table preferred_payment_setting {
+  customerId varchar [ref: > customer.id]
+  paymentIntegrationTypeId varchar [ref: > payment_integration_type.id]
+}
+
+// ==================== Booking ====================
+
+Table flight_booking {
+  id varchar [pk]
+  customerId varchar [ref: > customer.id]
+  bookingStatusId varchar [ref: > booking_status.id]
+  transactionId varchar [ref: > "transaction".id]
+  externalFlightRef varchar
+  airline varchar
+  flightNumber varchar
+  departureAirport varchar
+  arrivalAirport varchar
+  departureAt timestamp
+  arrivalAt timestamp
+  seatClass varchar
+  // seatNumber varchar   // OPEN: is seat selection in scope?
+  priceSnapshot decimal
+  createdAt timestamp
+}
+
+Table hotel_booking {
+  id varchar [pk]
+  customerId varchar [ref: > customer.id]
+  bookingStatusId varchar [ref: > booking_status.id]
+  transactionId varchar [ref: > "transaction".id]
+  externalHotelRef varchar
+  hotelNameSnapshot varchar
+  roomType varchar
+  checkIn date
+  checkOut date
+  priceSnapshot decimal
+  createdAt timestamp
+}
+
+Table booking_status {
+  id varchar [pk]
+  status varchar
+}
+
+// ==================== Payment ====================
+
+Table "transaction" {
+  id varchar [pk]
+  paymentTypeId varchar [ref: > payment_type_configuration.id]
+  paymentStatusId varchar [ref: > payment_status.id]
+  amount decimal
+  currency varchar   // OPEN: confirm required
+  createdAt timestamp
+  Note: 'OPEN: refund modeled as new negative-amount row, or status update on same row?'
+}
+
+Table transaction_details {
+  transactionId varchar [ref: > "transaction".id]
+  details varchar
+}
+
+Table payment_type_configuration {
+  id varchar [pk]
+  paymentIntegrationTypeId varchar [ref: > payment_integration_type.id]
+}
+
+Table payment_status {
+  id varchar [pk]
+  status varchar
+}
+
+Table payment_integration_type {
+  id varchar [pk]
+  type varchar
+}
+
+// ==================== Notification ====================
+
+Table notification {
+  id varchar [pk]
+  customerId varchar [ref: > customer.id]
+  notificationTypeId varchar [ref: > notification_type.id]
+  notificationStatusId varchar [ref: > notification_status.id]
+}
+
+Table notification_type {
+  id varchar [pk]
+  type varchar
+}
+
+Table notification_status {
+  id varchar [pk]
+  status varchar
+}
+
+// ==================== Auditing ====================
+
+Table auditing {
+  id varchar [pk]
+  details varchar
+}
+
+// ==================== Groups ====================
+
+TableGroup users_auth {
+  "user"
+  user_type
+  user_role
+  role
+  customer
+}
+
+TableGroup customer_mgmt {
+  address
+  customer_preferences
+  preferred_payment_setting
+}
+
+TableGroup booking {
+  flight_booking
+  hotel_booking
+  booking_status
+}
+
+TableGroup payment {
+  "transaction"
+  transaction_details
+  payment_type_configuration
+  payment_status
+  payment_integration_type
+}
+
+TableGroup notifications {
+  notification
+  notification_type
+  notification_status
+}
+
+TableGroup search {
+  external_api_configuration
+}
