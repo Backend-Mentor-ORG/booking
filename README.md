@@ -7,9 +7,11 @@ Hotels & Flights booking system.
 ```
 Booking/
 ├── use-cases.md          # Use case list: actors, use cases, groupings
+├── system-design.md      # Basic system design (high-level architecture)
 ├── open-questions.md     # Unresolved database design decisions
 ├── sources/
 │   ├── use-case-diagram.jpg   # Original hand-drawn use-case diagram (source of truth for use-cases.md)
+│   ├── session-2-tasks.png    # Task list for session 2
 │   └── schema.dbml            # Database schema (PostgreSQL, DBML format)
 └── diagrams/
     └── UC-01 .. UC-12         # One file per use case
@@ -61,3 +63,43 @@ scope, but 3 design decisions are still open — see [`open-questions.md`](open-
 
 Rating/Review is out of scope for this project at this stage — no use case
 currently requires it.
+
+## Session 2
+
+Task source: [`sources/session-2-tasks.png`](sources/session-2-tasks.png)
+
+### Basic System Design — Booking
+
+[`system-design.md`](system-design.md) — high-level architecture: 4 services
+(Search, Booking, Payment, Notification), the external systems each one
+talks to, and how the 12 use cases map onto them.
+
+```mermaid
+flowchart LR
+  Guest([Guest])
+  User([Registered User])
+
+  Guest --> API[API Layer]
+  User --> API
+
+  API --> SearchSvc[Search Service]
+  API --> BookingSvc[Booking Service]
+  API --> PaymentSvc[Payment Service]
+
+  SearchSvc --> HotelsAPI[(Hotels API)]
+  SearchSvc --> FlightsAPI[(Flights API)]
+  SearchSvc --> DB[(PostgreSQL)]
+
+  BookingSvc --> DB
+  BookingSvc -- BookingCreated event --> NotifSvc[Notification Service]
+
+  PaymentSvc --> Gateway[(3rd-Party Payment Gateway)]
+  PaymentSvc --> DB
+
+  NotifSvc --> EmailProvider[(Email Provider)]
+  NotifSvc --> DB
+```
+
+### Remaining session 2 tasks
+
+- **Cache Flights or Hotel Task** (Guest vs Logged-in caching) — not started
