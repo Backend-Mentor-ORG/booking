@@ -8,6 +8,7 @@ Hotels & Flights booking system.
 Booking/
 ├── use-cases.md          # Use case list: actors, use cases, groupings
 ├── system-design.md      # Basic system design (high-level architecture)
+├── caching-design.md     # Search caching design (Guest vs Logged-in)
 ├── open-questions.md     # Unresolved database design decisions
 ├── sources/
 │   ├── use-case-diagram.jpg   # Original hand-drawn use-case diagram (source of truth for use-cases.md)
@@ -100,6 +101,11 @@ flowchart LR
   NotifSvc --> DB
 ```
 
-### Remaining session 2 tasks
+### Cache Flights or Hotel Task
 
-- **Cache Flights or Hotel Task** (Guest vs Logged-in caching) — not started
+[`caching-design.md`](caching-design.md) — caching strategy for Search
+(UC-01–UC-04): raw results cached and shared between Guest and Logged-in
+users; Logged-in users additionally get results re-ranked using their
+booking history. Applied to [UC-01](diagrams/UC-01-search-hotels.md),
+[UC-02](diagrams/UC-02-filter-hotels.md), [UC-03](diagrams/UC-03-search-flights.md),
+[UC-04](diagrams/UC-04-filter-flights.md).
