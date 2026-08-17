@@ -72,7 +72,7 @@ Table flight_booking {
   id varchar [pk]
   customerId varchar [ref: > customer.id]
   bookingStatusId varchar [ref: > booking_status.id]
-  transactionId varchar [ref: > "transaction".id]
+  transactionId varchar [ref: > "transaction".id, unique]  // OPEN: still allows the same transaction to be shared across flight_booking AND hotel_booking — see open-questions.md
   externalFlightRef varchar
   airline varchar
   flightNumber varchar
@@ -90,7 +90,7 @@ Table hotel_booking {
   id varchar [pk]
   customerId varchar [ref: > customer.id]
   bookingStatusId varchar [ref: > booking_status.id]
-  transactionId varchar [ref: > "transaction".id]
+  transactionId varchar [ref: > "transaction".id, unique]  // OPEN: still allows the same transaction to be shared across flight_booking AND hotel_booking — see open-questions.md
   externalHotelRef varchar
   hotelNameSnapshot varchar
   roomType varchar

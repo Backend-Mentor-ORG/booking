@@ -9,6 +9,7 @@ Booking/
 ├── use-cases.md          # Use case list: actors, use cases, groupings
 ├── system-design.md      # Basic system design (high-level architecture)
 ├── caching-design.md     # Search caching design (Guest vs Logged-in)
+├── concepts.md           # Scatter & Gather / Redis — background + how they're used here
 ├── open-questions.md     # Unresolved database design decisions
 ├── sources/
 │   ├── use-case-diagram.jpg   # Original hand-drawn use-case diagram (source of truth for use-cases.md)
@@ -56,11 +57,12 @@ Each file in `diagrams/` covers one use case with four sections:
 [`sources/schema.dbml`](sources/schema.dbml) covers every table needed to
 support the 12 use cases above (Users & Auth, Customer Management, Booking,
 Payment, Notification, Search & Filter). It is structurally complete for this
-scope, but 3 design decisions are still open — see [`open-questions.md`](open-questions.md):
+scope, but 4 design decisions are still open — see [`open-questions.md`](open-questions.md):
 
 1. Is `transaction.currency` required?
 2. How is a refund modeled on cancellation (new row vs. status update)?
 3. Is seat-number selection in scope for flight booking?
+4. Can one `transaction` cover both a `flight_booking` and a `hotel_booking` (package deal)?
 
 Rating/Review is out of scope for this project at this stage — no use case
 currently requires it.
@@ -109,3 +111,8 @@ users; Logged-in users additionally get results re-ranked using their
 booking history. Applied to [UC-01](diagrams/UC-01-search-hotels.md),
 [UC-02](diagrams/UC-02-filter-hotels.md), [UC-03](diagrams/UC-03-search-flights.md),
 [UC-04](diagrams/UC-04-filter-flights.md).
+
+### Reading — Scatter & Gather / Redis
+
+[`concepts.md`](concepts.md) — explains both techniques and exactly how (and
+where) each one is used in this project, for interview prep.
