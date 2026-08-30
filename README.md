@@ -73,9 +73,11 @@ Task source: [`sources/session-2-tasks.png`](sources/session-2-tasks.png)
 
 ### Basic System Design — Booking
 
-[`system-design.md`](system-design.md) — high-level architecture: 4 services
-(Search, Booking, Payment, Notification), the external systems each one
-talks to, and how the 12 use cases map onto them.
+[`system-design.md`](system-design.md) — high-level architecture: 5 services
+(Flight Search, Hotel Search, Booking, Payment, Notification — Search was
+split into two services on 2026-08-30, see the Decision note in
+`system-design.md`), the external systems each one talks to, and how the
+12 use cases map onto them.
 
 ```mermaid
 flowchart LR
@@ -85,13 +87,16 @@ flowchart LR
   Guest --> API[API Layer]
   User --> API
 
-  API --> SearchSvc[Search Service]
+  API --> FlightSearchSvc[Flight Search Service]
+  API --> HotelSearchSvc[Hotel Search Service]
   API --> BookingSvc[Booking Service]
   API --> PaymentSvc[Payment Service]
 
-  SearchSvc --> HotelsAPI[(Hotels API)]
-  SearchSvc --> FlightsAPI[(Flights API)]
-  SearchSvc --> DB[(PostgreSQL)]
+  FlightSearchSvc --> FlightsAPI[(Flights API)]
+  FlightSearchSvc --> DB[(PostgreSQL)]
+
+  HotelSearchSvc --> HotelsAPI[(Hotels API)]
+  HotelSearchSvc --> DB
 
   BookingSvc --> DB
   BookingSvc -- BookingCreated event --> NotifSvc[Notification Service]
