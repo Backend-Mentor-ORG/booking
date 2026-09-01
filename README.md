@@ -126,3 +126,12 @@ booking history. Applied to [UC-01](diagrams/UC-01-search-hotels.md),
 
 [`concepts.md`](concepts.md) — explains both techniques and exactly how (and
 where) each one is used in this project, for interview prep.
+
+### Scatter & Gather — PoC (session 21 task)
+
+[`poc/scatter-gather/`](poc/scatter-gather/) — a small runnable Node.js PoC
+(static/mock providers, no real HTTP) demonstrating Scatter, per-provider
+Timeout, Retry, and Resilience live. Run with `node poc/scatter-gather`. See
+its own [README](poc/scatter-gather/README.md) for what it shows and what it
+deliberately leaves open (the Partial Response transport — see
+`open-questions.md` #5).
