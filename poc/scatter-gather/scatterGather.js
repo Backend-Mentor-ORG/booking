@@ -1,12 +1,3 @@
-// Scatter & Gather engine: fires all providers in parallel ("scatter"),
-// applies a per-provider timeout + retry to each one independently, then
-// waits for every one of them to settle before returning the combined
-// result ("gather"). One slow/broken provider never throws and never stops
-// the others — it just ends up in `failed` instead of `succeeded`.
-//
-// See lessons 0016/0019 and Booking/concepts.md for the concept this
-// implements.
-
 function withTimeout(promiseFactory, timeoutMs) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
@@ -26,9 +17,6 @@ function withTimeout(promiseFactory, timeoutMs) {
   });
 }
 
-// Calls one provider with a timeout, retrying up to maxRetries times on
-// failure or timeout. Never throws — always resolves to a result object,
-// so one broken provider can't reject the whole Promise.all below.
 async function callWithRetry(provider, timeoutMs, maxRetries) {
   let lastError;
   for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
@@ -37,7 +25,6 @@ async function callWithRetry(provider, timeoutMs, maxRetries) {
       return { provider: provider.name, status: "fulfilled", data, attempts: attempt };
     } catch (err) {
       lastError = err;
-      // loop again if attempts remain (this is the Retry)
     }
   }
   return {
@@ -48,15 +35,6 @@ async function callWithRetry(provider, timeoutMs, maxRetries) {
   };
 }
 
-// options:
-//   timeoutMs        - per-provider timeout
-//   maxRetries        - retries per provider after the first attempt
-//   onProviderSettled - optional callback fired the instant EACH provider
-//                        settles (not just at the end). This is what a real
-//                        server would use to push a Partial Response update
-//                        to the client — over Polling or SSE, since a
-//                        single plain REST response can't do it (see
-//                        Booking/open-questions.md #5).
 async function scatterGather(providers, { timeoutMs, maxRetries, onProviderSettled } = {}) {
   const start = Date.now();
 

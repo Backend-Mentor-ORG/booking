@@ -1,4 +1,3 @@
-// Demo runner for the Scatter & Gather PoC. Run with: node poc/scatter-gather
 const { providers } = require("./providers");
 const { scatterGather } = require("./scatterGather");
 
