@@ -25,6 +25,23 @@ into one result list before caching. The schema already supports multiple
 rows per provider type, so the design extends to this without changes —
 it just isn't exercised yet, since UC-01/UC-03 only call one API.
 
+**Partial response and resilience** — the two properties that make Scatter
+& Gather worth the added complexity when it *is* exercised:
+- **Partial response:** don't block the whole request on the slowest
+  provider. Return results as they arrive (fastest provider first), and
+  keep updating the result set as later providers respond, instead of
+  waiting for all of them before showing anything.
+- **Resilience:** if one provider errors out or exceeds its timeout, ignore
+  it and return the ones that succeeded — one bad provider shouldn't fail
+  the whole search. This requires a per-provider timeout, not just one
+  timeout for the whole request.
+
+Neither is free: partial response needs a transport that can push more
+than one response over time (polling a status endpoint, or a streaming
+connection like SSE) — a single plain REST response can't do this, since
+the connection closes once the first response is sent. This project hasn't
+picked a transport for it yet — see [`open-questions.md`](open-questions.md).
+
 ## Redis / Caching
 
 **Concept:** Redis is an in-memory key-value store. Used as a cache sitting

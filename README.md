@@ -57,12 +57,14 @@ Each file in `diagrams/` covers one use case with four sections:
 [`sources/schema.dbml`](sources/schema.dbml) covers every table needed to
 support the 12 use cases above (Users & Auth, Customer Management, Booking,
 Payment, Notification, Search & Filter). It is structurally complete for this
-scope, but 4 design decisions are still open — see [`open-questions.md`](open-questions.md):
+scope, but 6 design decisions are still open — see [`open-questions.md`](open-questions.md):
 
 1. Is `transaction.currency` required?
 2. How is a refund modeled on cancellation (new row vs. status update)?
 3. Is seat-number selection in scope for flight booking?
-4. Can one `transaction` cover both a `flight_booking` and a `hotel_booking` (package deal)?
+4. Which real provider does the Flight Aggregator call (Duffel is a candidate)?
+5. What transport carries Scatter & Gather's partial response (polling vs. SSE)?
+6. Can one `transaction` cover both a `flight_booking` and a `hotel_booking` (package deal)?
 
 Rating/Review is out of scope for this project at this stage — no use case
 currently requires it.
@@ -73,11 +75,12 @@ Task source: [`sources/session-2-tasks.png`](sources/session-2-tasks.png)
 
 ### Basic System Design — Booking
 
-[`system-design.md`](system-design.md) — high-level architecture: 5 services
-(Flight Search, Hotel Search, Booking, Payment, Notification — Search was
-split into two services on 2026-08-30, see the Decision note in
-`system-design.md`), the external systems each one talks to, and how the
-12 use cases map onto them.
+[`system-design.md`](system-design.md) — high-level architecture: 7
+components (Flight Search, Hotel Search, their two Aggregators, Booking,
+Payment, Notification — Search was split into two services on 2026-08-30,
+and an Aggregator layer was added in front of each provider API the same
+day; see the Decision notes in `system-design.md`), the external systems
+each one talks to, and how the 12 use cases map onto them.
 
 ```mermaid
 flowchart LR
@@ -92,10 +95,12 @@ flowchart LR
   API --> BookingSvc[Booking Service]
   API --> PaymentSvc[Payment Service]
 
-  FlightSearchSvc --> FlightsAPI[(Flights API)]
+  FlightSearchSvc --> FlightAggregator[Flight Aggregator]
+  FlightAggregator --> FlightsAPI[(Flights API)]
   FlightSearchSvc --> DB[(PostgreSQL)]
 
-  HotelSearchSvc --> HotelsAPI[(Hotels API)]
+  HotelSearchSvc --> HotelAggregator[Hotel Aggregator]
+  HotelAggregator --> HotelsAPI[(Hotels API)]
   HotelSearchSvc --> DB
 
   BookingSvc --> DB

@@ -35,7 +35,30 @@ Is specific seat selection in scope for flight booking, or is `seatClass` alone 
 
 **Affects:** UC-11 Book Flight
 
-## 4. Sharing one `transaction` across `flight_booking` and `hotel_booking`
+## 4. Which real provider does the Flight Aggregator call?
+
+`external_api_configuration` is provider-agnostic — no real provider is
+wired in yet. A candidate from a session-21 case study (not a decision for
+*this* project — that was a different team's experience): **Duffel** over
+**Amadeus**, on documentation quality, a built-in payment gateway (saves
+building a separate one), and a solid sandbox/test environment. Needs its
+own confirmation before treating it as settled here.
+
+**Affects:** Flight Aggregator implementation, Payment Service integration scope
+
+## 5. Transport for Scatter & Gather's partial response
+
+`concepts.md` now covers partial response and resilience (return fastest
+providers first, ignore ones that time out), but a plain REST call can't
+push more than one response — the connection closes after the first. Two
+realistic options: polling (client re-fetches a status endpoint) or SSE
+(one connection stays open, server pushes updates). Not picked yet, and
+only matters once/if a second provider per type is actually added (see
+`concepts.md` — Scatter & Gather).
+
+**Affects:** Flight/Hotel Aggregator implementation, API Layer contract
+
+## 6. Sharing one `transaction` across `flight_booking` and `hotel_booking`
 
 `transactionId` is now `unique` on both `flight_booking` and `hotel_booking`,
 which prevents two rows of the *same* type from sharing one transaction. It

@@ -17,10 +17,12 @@ flowchart LR
   API --> BookingSvc[Booking Service]
   API --> PaymentSvc[Payment Service]
 
-  FlightSearchSvc --> FlightsAPI[(Flights API)]
+  FlightSearchSvc --> FlightAggregator[Flight Aggregator]
+  FlightAggregator --> FlightsAPI[(Flights API)]
   FlightSearchSvc --> DB[(PostgreSQL)]
 
-  HotelSearchSvc --> HotelsAPI[(Hotels API)]
+  HotelSearchSvc --> HotelAggregator[Hotel Aggregator]
+  HotelAggregator --> HotelsAPI[(Hotels API)]
   HotelSearchSvc --> DB
 
   BookingSvc --> DB
@@ -37,11 +39,34 @@ flowchart LR
 
 | Component | Responsible for | Use Cases |
 |---|---|---|
-| **Flight Search Service** | Calling the Flights API, reading `external_api_configuration` (provider = Flights) | UC-03, UC-04 |
-| **Hotel Search Service** | Calling the Hotels API, reading `external_api_configuration` (provider = Hotels) | UC-01, UC-02 |
+| **Flight Search Service** | Search + caching logic for flights only; delegates all provider communication to **Flight Aggregator** | UC-03, UC-04 |
+| **Hotel Search Service** | Search + caching logic for hotels only; delegates all provider communication to **Hotel Aggregator** | UC-01, UC-02 |
+| **Flight Aggregator** | Calling the Flights API, reading `external_api_configuration` (provider = Flights), normalizing the response into one shape | UC-03, UC-04 |
+| **Hotel Aggregator** | Calling the Hotels API, reading `external_api_configuration` (provider = Hotels), normalizing the response into one shape | UC-01, UC-02 |
 | **Booking Service** | Creating/reading/cancelling bookings | UC-07, UC-08, UC-09, UC-10, UC-11 |
 | **Payment Service** | Charging via the 3rd-party gateway, transaction records | UC-05, UC-06 |
 | **Notification Service** | Sending confirmation emails, notification records | UC-12 |
+
+## Decision: introduce an Aggregator layer per Search Service (2026-08-30)
+
+Each Search Service no longer calls its provider API directly. An
+**Aggregator** sits in between:
+
+- **Unified responsibility** — the Search Service owns search + caching only;
+  the Aggregator owns provider communication + response normalization.
+- **Normalization** — each provider returns data in its own shape; the
+  Aggregator normalizes it before the Search Service ever sees it, so a
+  provider's API change is contained to its Aggregator, not the search logic.
+- **Security/isolation** — the Aggregator isolates external providers from
+  the rest of the system; a malformed or unexpected provider response is
+  absorbed here, not passed straight into core components.
+- **Reuse potential** — this layer is generic enough that it could later be
+  exposed as its own internal service other projects reuse, not just
+  internal plumbing for this one.
+
+Not part of this decision yet: whether Flight/Hotel Aggregator actually
+scatters across *multiple* providers per type, or just wraps one (see
+`concepts.md` — Scatter & Gather).
 
 ## Decision: separate Flight Search from Hotel Search (2026-08-30)
 
@@ -78,6 +103,5 @@ choice here, since flight and hotel search load are expected to diverge.
 
 - Caching for Search (Guest vs Logged-in) — now designed separately in
   [`caching-design.md`](caching-design.md), not folded into this diagram yet.
-- An External API Layer / Adapter between each Search Service and its
-  provider API (to avoid calling `HotelsAPI`/`FlightsAPI` directly) —
-  pending decision, not applied here yet.
+- Which real provider each Aggregator calls — see the candidate in
+  [`open-questions.md`](open-questions.md).
