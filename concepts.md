@@ -42,6 +42,19 @@ connection like SSE) — a single plain REST response can't do this, since
 the connection closes once the first response is sent. This project hasn't
 picked a transport for it yet — see [`open-questions.md`](open-questions.md).
 
+**Future consideration — Message Broker (not needed now):** calling every
+provider directly from the request cycle is fine with a handful of
+providers, but doesn't scale indefinitely — with N providers and M
+concurrent searches, that's N × M simultaneous outbound connections at
+once, which can strain server resources well before any provider itself is
+the bottleneck. If the provider count ever grows substantially beyond the
+single candidate (Duffel) this project has today, the fix is to put each
+provider call on a queue (a message broker, e.g. RabbitMQ) and let a fixed
+pool of workers process it, decoupling "receive the search request" from
+"actually call each provider." Not a decision for this project as it
+stands — logged here as the direction to take if/when it's ever needed
+(2026-09-19).
+
 ## Traveller data: JSONB vs. a separate table
 
 **Concept:** when data is closely tied to one entity (here: the travellers
