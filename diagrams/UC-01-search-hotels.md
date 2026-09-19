@@ -10,7 +10,11 @@ Caching behavior below follows [`caching-design.md`](../caching-design.md)
 
 ```mermaid
 flowchart TD
-  A[Guest or User submits search: city, checkIn, checkOut, guests] --> B{Cache hit for criteria?}
+  A[Guest or User submits search: city, checkIn, checkOut, guests] --> Z{Logged-in?}
+  Z -- Yes --> Z1[Use userId from session]
+  Z -- No --> Z2[Read guestId from cookie, or create + set one]
+  Z1 --> B{Cache hit for id + criteria?}
+  Z2 --> B
   B -- Yes --> C[Load cached raw results]
   B -- No --> D[Scatter: call Hotels API]
   D --> E[Gather: normalize responses]
@@ -32,8 +36,9 @@ sequenceDiagram
   participant Ext as Hotels API
   participant P as Personalization Service
 
-  U->>API: GET /hotels/search?city&checkIn&checkOut&guests
-  API->>Cache: get(cacheKey)
+  U->>API: GET /hotels/search?city&checkIn&checkOut&guests (+ session or guestId cookie)
+  API->>API: resolve identity (userId from session, or read/create guestId from cookie)
+  API->>Cache: get(cacheKey = identity + hash(criteria))
   alt cache hit
     Cache-->>API: cached raw results
   else cache miss
@@ -52,8 +57,9 @@ sequenceDiagram
 ## Pseudocode
 
 ```
-function searchHotels(city, checkIn, checkOut, guests, customerId):
-    cacheKey = buildCacheKey("hotel", city, checkIn, checkOut, guests)
+function searchHotels(city, checkIn, checkOut, guests, customerId, guestIdCookie):
+    identity = customerId is not null ? customerId : (guestIdCookie or generateGuestId())
+    cacheKey = buildCacheKey("hotel", identity, city, checkIn, checkOut, guests)
     results = cache.get(cacheKey)
 
     if results is null:
@@ -84,4 +90,6 @@ erDiagram
 `external_api_configuration` holds the connection details for the Hotels API
 call (`provider = "Hotels"`). `hotel_booking` is read only for logged-in
 users, to re-rank results by the customer's past bookings. The cache itself
-(Redis, proposed) is not part of the relational schema.
+(Redis, proposed) is not part of the relational schema. Identity resolution
+(session `userId` vs. cookie `guestId`) and the compound cache key are per
+the 2026-09-19 update in `caching-design.md`.

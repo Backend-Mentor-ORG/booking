@@ -29,7 +29,7 @@ sequenceDiagram
   U->>API: POST /bookings/flight {flightRef, seatClass, passengers}
   API->>Ext: confirmAvailability(flightRef, seatClass, passengers)
   Ext-->>API: available
-  API->>DB: insert flight_booking(customerId, status=AwaitingPayment, snapshot...)
+  API->>DB: insert flight_booking(customerId, status=AwaitingPayment, travellers, snapshot...)
   DB-->>API: bookingId
   API-->>U: booking created
   API->>N: emit BookingCreated(bookingId)
@@ -39,7 +39,7 @@ sequenceDiagram
 ## Pseudocode
 
 ```
-function bookFlight(customerId, flightRef, seatClass, priceSnapshot):
+function bookFlight(customerId, flightRef, seatClass, travellers, priceSnapshot):
     available = FlightsAPI.confirmAvailability(flightRef, seatClass)
     if not available:
         throw Error("seat/fare no longer available")
@@ -57,6 +57,7 @@ function bookFlight(customerId, flightRef, seatClass, priceSnapshot):
         departureAt: flight.departureAt,
         arrivalAt: flight.arrivalAt,
         seatClass: seatClass,
+        travellers: travellers,   // jsonb — see concepts.md (2026-09-19)
         priceSnapshot: priceSnapshot,
         createdAt: now()
     })

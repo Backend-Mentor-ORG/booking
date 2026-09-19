@@ -10,7 +10,11 @@ Caching behavior below follows [`caching-design.md`](../caching-design.md)
 
 ```mermaid
 flowchart TD
-  A[Guest or User submits search + filters: origin, destination, date, passengers, priceRange, stops, airline, timeWindow] --> B{Cache hit for criteria+filters?}
+  A[Guest or User submits search + filters: origin, destination, date, passengers, priceRange, stops, airline, timeWindow] --> Z{Logged-in?}
+  Z -- Yes --> Z1[Use userId from session]
+  Z -- No --> Z2[Read guestId from cookie, or create + set one]
+  Z1 --> B{Cache hit for id + criteria+filters?}
+  Z2 --> B
   B -- Yes --> C[Load cached raw results]
   B -- No --> D[Scatter: call Flights API with filter parameters]
   D --> E[Gather: normalize responses]
@@ -32,8 +36,9 @@ sequenceDiagram
   participant Ext as Flights API
   participant P as Personalization Service
 
-  U->>API: GET /flights/filter?origin&destination&date&passengers&priceRange&stops&airline&timeWindow
-  API->>Cache: get(cacheKey)
+  U->>API: GET /flights/filter?origin&destination&date&passengers&priceRange&stops&airline&timeWindow (+ session or guestId cookie)
+  API->>API: resolve identity (userId from session, or read/create guestId from cookie)
+  API->>Cache: get(cacheKey = identity + hash(criteria+filters))
   alt cache hit
     Cache-->>API: cached raw results
   else cache miss
@@ -52,8 +57,9 @@ sequenceDiagram
 ## Pseudocode
 
 ```
-function filterFlights(origin, destination, date, passengers, filters, customerId):
-    cacheKey = buildCacheKey("flight", origin, destination, date, passengers, filters)
+function filterFlights(origin, destination, date, passengers, filters, customerId, guestIdCookie):
+    identity = customerId is not null ? customerId : (guestIdCookie or generateGuestId())
+    cacheKey = buildCacheKey("flight", identity, origin, destination, date, passengers, filters)
     results = cache.get(cacheKey)
 
     if results is null:
@@ -84,4 +90,5 @@ erDiagram
 Same as UC-03: `external_api_configuration` (`provider = "Flights"`) supplies
 the connection details for the call, and `flight_booking` is read only for
 logged-in users' personalization. The cache itself (Redis, proposed) is not
-part of the relational schema.
+part of the relational schema. Identity resolution and the compound cache
+key are per the 2026-09-19 update in `caching-design.md`.

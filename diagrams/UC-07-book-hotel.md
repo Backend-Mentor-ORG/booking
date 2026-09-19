@@ -26,10 +26,10 @@ sequenceDiagram
   participant DB as hotel_booking table
   participant N as Notification Service
 
-  U->>API: POST /bookings/hotel {hotelRef, roomType, checkIn, checkOut}
+  U->>API: POST /bookings/hotel {hotelRef, roomType, checkIn, checkOut, guests}
   API->>Ext: confirmAvailability(hotelRef, roomType, checkIn, checkOut)
   Ext-->>API: available
-  API->>DB: insert hotel_booking(customerId, status=AwaitingPayment, snapshot...)
+  API->>DB: insert hotel_booking(customerId, status=AwaitingPayment, travellers, snapshot...)
   DB-->>API: bookingId
   API-->>U: booking created
   API->>N: emit BookingCreated(bookingId)
@@ -39,7 +39,7 @@ sequenceDiagram
 ## Pseudocode
 
 ```
-function bookHotel(customerId, hotelRef, roomType, checkIn, checkOut, priceSnapshot):
+function bookHotel(customerId, hotelRef, roomType, checkIn, checkOut, guests, priceSnapshot):
     available = HotelsAPI.confirmAvailability(hotelRef, roomType, checkIn, checkOut)
     if not available:
         throw Error("room no longer available")
@@ -52,6 +52,7 @@ function bookHotel(customerId, hotelRef, roomType, checkIn, checkOut, priceSnaps
         roomType: roomType,
         checkIn: checkIn,
         checkOut: checkOut,
+        travellers: guests,   // jsonb — see concepts.md (2026-09-19)
         priceSnapshot: priceSnapshot,
         createdAt: now()
     })
