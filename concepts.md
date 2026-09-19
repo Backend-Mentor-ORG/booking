@@ -42,6 +42,57 @@ connection like SSE) — a single plain REST response can't do this, since
 the connection closes once the first response is sent. This project hasn't
 picked a transport for it yet — see [`open-questions.md`](open-questions.md).
 
+## Traveller data: JSONB vs. a separate table
+
+**Concept:** when data is closely tied to one entity (here: the travellers
+on a booking) but has no independent life of its own, storing it as a
+`jsonb` column on that entity can be simpler than a separate table with its
+own relationship. Whether that's the right call depends on trade-offs, not
+a fixed rule — six criteria decide it:
+
+1. **Simplicity** — does this need its own entity/repository/relationship/
+   queries, or is it just information living inside the parent record?
+2. **Maintenance** — does it have an independent lifecycle (create/update/
+   delete on its own), or does it get written once with the parent and
+   never touched separately?
+3. **Readability from the database** — when you open the parent row, is
+   the related data right there, or do you need another table to see the
+   full picture?
+4. **JSONB vs. relationship** — does it have its own domain, or
+   relationships to other entities (a user, a customer, a loyalty
+   account)?
+5. **Writes** — does it get updated often, or is the pattern just
+   create-parent → insert-this → read?
+6. **Need for joins** — do you need to query this data on its own (e.g.
+   "all bookings for this specific traveller")? If yes, a table is the
+   better fit.
+
+**Where it applies here:** `flight_booking.travellers` and
+`hotel_booking.travellers` (`sources/schema.dbml`) store passenger/guest
+data as `jsonb` rather than a separate `traveller` table, because:
+
+- Travellers aren't a domain of their own here — there's no traveller
+  management, no independent lifecycle for one.
+- Bookings go through external providers; traveller data is information
+  tied to the moment of booking, not master data this system manages.
+- It's immutable after booking — the pattern is insert-with-the-booking,
+  then read, never an independent update.
+- No relationships are needed to `customer`, a user account, or a loyalty
+  account for this data.
+- The access pattern is always "read the booking together with its
+  travellers" (confirmation emails, booking details) — never travellers
+  queried on their own.
+- `jsonb` absorbs differences between providers (one may return extra
+  fields another doesn't) without a schema migration every time.
+
+**Trade-off, stated plainly:** this gives up referential integrity,
+fine-grained per-traveller updates, and schema enforcement on that data —
+the database won't validate its shape the way a real column/table would.
+Accepted here because none of criteria 2, 4, or 6 above call for a table.
+If a future requirement needs querying travellers directly (e.g. "find all
+bookings for traveller X" across the system), that's exactly the signal to
+revisit this and split it into its own table.
+
 ## Redis / Caching
 
 **Concept:** Redis is an in-memory key-value store. Used as a cache sitting

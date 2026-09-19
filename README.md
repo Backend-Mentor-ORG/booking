@@ -57,7 +57,7 @@ Each file in `diagrams/` covers one use case with four sections:
 [`sources/schema.dbml`](sources/schema.dbml) covers every table needed to
 support the 12 use cases above (Users & Auth, Customer Management, Booking,
 Payment, Notification, Search & Filter). It is structurally complete for this
-scope, but 6 design decisions are still open — see [`open-questions.md`](open-questions.md):
+scope, but 8 design decisions are still open — see [`open-questions.md`](open-questions.md):
 
 1. Is `transaction.currency` required?
 2. How is a refund modeled on cancellation (new row vs. status update)?
@@ -65,9 +65,16 @@ scope, but 6 design decisions are still open — see [`open-questions.md`](open-
 4. Which real provider does the Flight Aggregator call (Duffel is a candidate)?
 5. What transport carries Scatter & Gather's partial response (polling vs. SSE)?
 6. Can one `transaction` cover both a `flight_booking` and a `hotel_booking` (package deal)?
+7. Is a per-provider cache worth the added aggregation complexity?
+8. Is proactive cache refresh before TTL expiry worth adding?
 
 Rating/Review is out of scope for this project at this stage — no use case
 currently requires it.
+
+Traveller/guest data on a booking (`flight_booking.travellers`,
+`hotel_booking.travellers`) is a settled decision, not an open question: a
+`jsonb` column instead of a separate table — see the "Traveller data" section
+in [`concepts.md`](concepts.md) (2026-09-19).
 
 ## Session 2
 
@@ -116,16 +123,21 @@ flowchart LR
 ### Cache Flights or Hotel Task
 
 [`caching-design.md`](caching-design.md) — caching strategy for Search
-(UC-01–UC-04): raw results cached and shared between Guest and Logged-in
-users; Logged-in users additionally get results re-ranked using their
-booking history. Applied to [UC-01](diagrams/UC-01-search-hotels.md),
+(UC-01–UC-04): each user/guest gets their own cache row, keyed by their
+identity (a session `userId`, or a cookie-based `guestId` for anonymous
+users — 2026-09-19) plus the search criteria, not one row shared by
+everyone with the same search — that shared-key shape risked a "thundering
+herd" of simultaneous provider calls when its TTL expired. Logged-in users
+additionally get results re-ranked using their booking history. Applied to
+[UC-01](diagrams/UC-01-search-hotels.md),
 [UC-02](diagrams/UC-02-filter-hotels.md), [UC-03](diagrams/UC-03-search-flights.md),
 [UC-04](diagrams/UC-04-filter-flights.md).
 
-### Reading — Scatter & Gather / Redis
+### Reading — Scatter & Gather / Redis / Traveller data modeling
 
-[`concepts.md`](concepts.md) — explains both techniques and exactly how (and
-where) each one is used in this project, for interview prep.
+[`concepts.md`](concepts.md) — explains Scatter & Gather, Redis caching, and
+the JSONB-vs-table decision for traveller data, and exactly how (and where)
+each one is used in this project, for interview prep.
 
 ### Scatter & Gather — PoC (session 21 task)
 

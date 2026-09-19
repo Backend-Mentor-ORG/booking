@@ -38,11 +38,14 @@ Is specific seat selection in scope for flight booking, or is `seatClass` alone 
 ## 4. Which real provider does the Flight Aggregator call?
 
 `external_api_configuration` is provider-agnostic — no real provider is
-wired in yet. A candidate from a session-21 case study (not a decision for
-*this* project — that was a different team's experience): **Duffel** over
-**Amadeus**, on documentation quality, a built-in payment gateway (saves
-building a separate one), and a solid sandbox/test environment. Needs its
-own confirmation before treating it as settled here.
+wired in yet. Session-21 case study compared **Duffel** to **Amadeus** on
+documentation quality, a built-in payment gateway (saves building a
+separate one), and a solid sandbox/test environment — that comparison was
+a different team's experience, not a recommendation for this project.
+
+**Proposed (2026-09-01, my own call, not yet approved):** go with Duffel,
+on the same criteria. Pending confirmation at the next mentor meeting —
+treat as a candidate, not settled, until then.
 
 **Affects:** Flight Aggregator implementation, Payment Service integration scope
 
@@ -68,3 +71,27 @@ applies within a single table). Is that combination — one payment covering a
 flight + hotel package — intended, or should it be blocked?
 
 **Affects:** UC-05 Initiate Payment, UC-07 Book Hotel, UC-11 Book Flight
+
+## 7. Per-provider cache instead of one combined cache row
+
+Raised as an alternative to the per-user/guest key in `caching-design.md`:
+cache each provider's response separately, so a cache hit on some providers
+combined with a live call to the ones that missed could serve a partial
+result faster than treating "the search" as one all-or-nothing cache entry.
+Not settled — the open problem is what happens when several providers miss
+at once: the result-aggregation logic gets more complex, and if most/all
+providers miss anyway, the benefit shrinks. Needs a concrete proposal before
+it's worth adopting.
+
+**Affects:** Flight/Hotel Aggregator implementation, caching design
+
+## 8. Proactive cache refresh before TTL expiry
+
+Also raised alongside #7: if a request arrives within, say, the last minute
+of a cache row's TTL, refresh it proactively instead of letting it expire.
+This narrows the thundering-herd window in `caching-design.md` but doesn't
+close it — if no request happens to land in that refresh window and a burst
+arrives right after expiry, the same pile-up recurs. Worth doing only as a
+supplement to the per-user/guest key, not a replacement for it.
+
+**Affects:** Flight/Hotel Aggregator implementation, caching design

@@ -82,6 +82,7 @@ Table flight_booking {
   arrivalAt timestamp
   seatClass varchar
   // seatNumber varchar   // OPEN: is seat selection in scope?
+  travellers jsonb   // DECISION (2026-09-19): passenger data as JSONB, not its own table — see concepts.md
   priceSnapshot decimal
   createdAt timestamp
 }
@@ -96,6 +97,7 @@ Table hotel_booking {
   roomType varchar
   checkIn date
   checkOut date
+  travellers jsonb   // DECISION (2026-09-19): guest data as JSONB, not its own table — see concepts.md
   priceSnapshot decimal
   createdAt timestamp
 }
