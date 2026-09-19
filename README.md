@@ -135,8 +135,9 @@ additionally get results re-ranked using their booking history. Applied to
 
 ### Reading — Scatter & Gather / Redis / Traveller data modeling
 
-[`concepts.md`](concepts.md) — explains Scatter & Gather, Redis caching, and
-the JSONB-vs-table decision for traveller data, and exactly how (and where)
+[`concepts.md`](concepts.md) — explains Scatter & Gather, Redis caching, the
+JSONB-vs-table decision for traveller data, and masking vs. hashing for its
+sensitive fields (passport/national ID/email) — and exactly how (and where)
 each one is used in this project, for interview prep.
 
 ### Scatter & Gather — PoC (session 21 task)

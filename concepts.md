@@ -93,6 +93,36 @@ If a future requirement needs querying travellers directly (e.g. "find all
 bookings for traveller X" across the system), that's exactly the signal to
 revisit this and split it into its own table.
 
+## Masking vs. hashing for sensitive traveller fields
+
+**Concept:** two different protections for sensitive data, for two different
+purposes — picking the wrong one either over-exposes data or makes it
+useless:
+- **Masking** hides part of a value from display (e.g. showing only the
+  last few characters) while the full original value stays intact,
+  protected, elsewhere. It's reversible by design — meant for controlled
+  partial disclosure, not secrecy from the system itself.
+- **Hashing** transforms a value into a one-way form with no way back to
+  the original. It's for values you only ever need to *compare*, never
+  recover (a password check is the canonical example) — using it on data
+  you might legitimately need back later makes that data permanently
+  unusable for that purpose.
+
+**Where it applies here:** inside `flight_booking.travellers` /
+`hotel_booking.travellers` (`jsonb`, see above), a passenger's passport
+number, national ID, and email are sensitive and should be **masked**
+wherever they're displayed (API responses, dashboards, logs) — not hashed,
+since the system may legitimately need the real value later (customer
+support, verification). Passport numbers carry extra risk specifically: in
+many countries the passport number is structurally derived from the
+national ID number, so leaking one can expose the other. Ordinary fields
+with no such sensitivity — a traveller's name, for instance — need neither
+masking nor hashing.
+
+**Not yet decided [مقترح]:** the exact masking format (how many characters
+stay visible, which end) isn't specified in any source — needs a concrete
+default picked at implementation time.
+
 ## Redis / Caching
 
 **Concept:** Redis is an in-memory key-value store. Used as a cache sitting
